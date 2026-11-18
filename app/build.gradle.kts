@@ -24,26 +24,36 @@ android {
         versionName = "1.0"
     }
 
+    // Make Android extract the .so files to disk so the launcher can point
+    // the JVM at {nativeLibraryDir}. Without this they stay compressed inside the APK.
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
         }
         configureEach {
-            //应用名
-            //app name
-            resValue("string","app_name","XXX Plugin")
-            //包名后缀
-            //package name Suffix
-            applicationIdSuffix = ".xxx"
+            // App name
+            resValue("string", "app_name", "BASS Plugin")
 
-            //插件包在启动器内显示的名称
-            //Plugin package display name within the launcher
-            manifestPlaceholders["des"] = ""
+            // Package name suffix
+            applicationIdSuffix = ".bass"
 
-            //JVM环境参数配置
-            //JVM environment parameter configuration
-            manifestPlaceholders["environment"] = mutableMapOf<String,String>().apply {
-//                put("example.plugin", "example")
+            // Description shown in the launcher's plugin list
+            manifestPlaceholders["des"] = "Provides libbass (BASS audio library) for Android"
+
+            // JVM environment parameters
+            // Makes JNA load its Android (bionic) libjnidispatch.so from this plugin
+            // (put the JNA 5.19.1 Android .aar in app/libs/) instead of the glibc one inside the jar.
+            // {nativeLibraryDir} is replaced by the launcher with this plugin's native lib path.
+            manifestPlaceholders["environment"] = mutableMapOf<String, String>().apply {
+                put("jna.boot.library.path", "{nativeLibraryDir}")
+                // Read by the patched soundboard jar: where to find libbass*.so
+                put("soundboard.bass.dir", "{nativeLibraryDir}")
             }.run {
                 buildList {
                     this@run.forEach { (key, value) ->
@@ -52,14 +62,12 @@ android {
                 }.joinToString(" ")
             }
 
-            //最小支持的MC版本
-            //The minimum supported MC version
+            // Leave empty = all Minecraft versions
             manifestPlaceholders["minMCVer"] = ""
-            //最大支持的MC版本
-            //The maximum supported MC version
             manifestPlaceholders["maxMCVer"] = ""
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
